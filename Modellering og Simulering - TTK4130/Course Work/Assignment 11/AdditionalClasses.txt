@@ -1,0 +1,53 @@
+block OpenTank
+  replaceable connector FlowConnector = TankSystem.LiquidFlow;
+  TankSystem.SensorSignal tSensor;
+  TankSystem.ValveActuatorSignal tActuator;
+  FlowConnector qInFromSource;
+  FlowConnector qInFromTank;
+  FlowConnector qOut;
+  parameter Real area = 1;
+  parameter Real flowGain = 0;
+  parameter Boolean measureLevel = true;
+  parameter Real minV = 0;
+  parameter Real maxV = 0;
+  parameter Real h0 = 1;
+  Real h (start = h0);
+equation
+  der(h) = if h>=0 then (qInFromSource.vFlow + qInFromTank.vFlow - qOut.vFlow) / area else 0;
+  qOut.vFlow = LimitValue(minV, maxV, -flowGain * tActuator.valvePosition);
+  if measureLevel then
+    tSensor.measurement = h;
+  end if;
+end OpenTank;
+
+block OpenTankWithTemperature
+  extends TankSystem.OpenTank(redeclare connector FlowConnector = TankSystem.LiquidFlowWithTemperature, measureLevel = false);
+  TankSystem.HeatFlow tContact;
+  parameter Real c = 1;
+  parameter Real T0 = 298;
+  Real T (start = T0);
+  equation
+    area * c * (der(h) * T + h * der(T)) = qInFromSource.vFlow * qInFromSource.T + qInFromTank.vFlow * qInFromTank.T - qOut.vFlow * qOut.T - tContact.H;
+    qOut.T = T;
+    tContact.T = T;
+    if not measureLevel then
+      tSensor.measurement = T;
+    end if;
+end OpenTankWithTemperature;
+
+block ContactSurface
+  TankSystem.HeatFlow side1;
+  TankSystem.HeatFlow side2;
+  parameter Real G = 0;
+  parameter Real area = 0;
+  Real H;
+equation
+  H = G * area * (side1.T - side2.T);
+  side1.H = H;
+  side2.H = -H;
+end ContactSurface;
+
+connector HeatFlow
+  Real T;
+  Real H;
+end HeatFlow;
