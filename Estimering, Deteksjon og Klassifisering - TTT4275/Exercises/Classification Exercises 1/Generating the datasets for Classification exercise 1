@@ -1,0 +1,24 @@
+
+Generating the datasets for Exercise set 1 in classification
+
+Due to some demand, here is an example in python of how to generate the datasets needed. Sorry for not providing a matlab version, but everything should be directly transferable
+
+import numpy as np
+
+variances = [0.25, 0.49, 1.0]
+
+m1 = -1
+m2 = 1
+
+np.random.randn gives us values from a standard normal distribution. (Use randn in matlab) Scale by multiplying with the standard deviation and shift by adding the mean.
+
+$X' = X \cdot \sigma + \mu$
+
+# Run only once to generate and save datasets
+for variance in variances:
+    c1 = np.random.randn(1000) * np.sqrt(variance) + m1
+    c2 = np.random.randn(1000) * np.sqrt(variance) + m2
+    dataset = np.concatenate((c1, c2))
+    
+    np.savetxt(f'dataset_{variance}.txt', dataset)
+
